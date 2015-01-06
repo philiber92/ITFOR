@@ -14,8 +14,7 @@ public class Database {
 
 	private Connection _conn;
 
-	public Database(String host, String username, String password)
-			throws SQLException {
+	public Database(String host, String username, String password) {
 		try {
 			Class.forName("org.hsqldb.jdbc.JDBCDriver");
 		} catch (ClassNotFoundException e1) {
@@ -24,8 +23,14 @@ public class Database {
 			System.exit(1);
 		}
 
-		_conn = DriverManager.getConnection("jdbc:hsqldb" + host, username,
-				password);
+		try {
+			_conn = DriverManager.getConnection("jdbc:hsqldb" + host, username,
+					password);
+		} catch (SQLException e) {
+			System.err.println("Couldn't connect to hsqldb!");
+			e.printStackTrace();
+			System.exit(1);
+		}
 	}
 
 	public void query(String statement) {
@@ -48,35 +53,28 @@ public class Database {
 		}
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 
 		if (args.length < 1)
 			return;
 
-		Database db = null;
-		BufferedReader reader = null;
+		Database db = new Database(HOST, USER, PASSWORD);
 
-		try {
-			db = new Database(HOST, USER, PASSWORD);
-			reader = new BufferedReader(new FileReader(args[0].trim()));
+		try(BufferedReader reader 
+				= new BufferedReader(new FileReader(args[0].trim()))) {
+			
 			String stmt = null;
 
 			while ((stmt = reader.readLine()) != null)
 				db.query(stmt);
+			
 		} catch (IOException e) {
 			System.err.println("Couldn't read sql file!");
 			e.printStackTrace();
 			System.exit(1);
-		} catch (SQLException e) {
-			System.err.println("Couldn't etablish connection!");
-			e.printStackTrace();
-			System.exit(1);
-		} finally {
-			if (db != null)
-				db.close();
-			if (reader != null)
-				reader.close();
-		}
+		} 
+		
+		db.close();
 	}
 
 }
